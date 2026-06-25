@@ -1,6 +1,30 @@
+# Segredos
+.env
+.env.local
+
+# Python
 __pycache__/
+*.py[cod]
+*.egg-info/
 .venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node / Next
 node_modules/
 .next/
-.env
+.pnpm-store/
+*.log
+
+# Uploads (artes e PNGs de orçamento ficam fora do git)
 /uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# WSL
+*Zone.Identifier

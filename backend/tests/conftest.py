@@ -45,7 +45,7 @@ def client(db_session):
 @pytest.fixture
 def vendedora(db_session) -> Usuario:
     user = Usuario(
-        email="vendedora@test.local",
+        email="vendedora.teste@livreprint.com",
         senha_hash=hash_senha("teste123"),
         nome="Vendedora Teste",
         role="vendedora",

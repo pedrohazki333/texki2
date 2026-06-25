@@ -35,7 +35,7 @@ def test_login_invalido(client, vendedora):
 def test_login_usuario_inexistente(client):
     r = client.post(
         "/api/auth/login",
-        json={"email": "ninguem@test.local", "senha": "x"},
+        json={"email": "ninguem@livreprint.com", "senha": "x"},
     )
     assert r.status_code == 401
     assert r.json()["error"]["code"] == "auth.invalid_credentials"
@@ -60,6 +60,21 @@ def test_me_com_cookie(client, vendedora):
     assert r.status_code == 200
     assert r.json()["email"] == vendedora.email
     assert r.json()["role"] == "vendedora"
+
+
+def test_logout_apaga_cookie(client, vendedora):
+    login = client.post(
+        "/api/auth/login",
+        json={"email": vendedora.email, "senha": "teste123"},
+    )
+    assert login.status_code == 200
+
+    logout = client.post("/api/auth/logout")
+    assert logout.status_code == 204
+
+    set_cookie = logout.headers.get("set-cookie", "")
+    assert "texki_session=" in set_cookie, "logout deve enviar Set-Cookie zerando a sessão"
+    assert "max-age=0" in set_cookie.lower() or 'expires=' in set_cookie.lower()
 
 
 def test_require_role_bloqueia_papel_errado():

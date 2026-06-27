@@ -17,6 +17,39 @@ export type Cliente = {
   data_consentimento: string | null;
 };
 
+export type TipoProduto = "dtf_por_metro" | "vestuario";
+export type BaseFaixa = "comprimento_m" | "quantidade";
+
+export type Produto = {
+  id: number;
+  nome: string;
+  tipo: TipoProduto;
+};
+
+export type Variacao = {
+  id: number;
+  cor: string;
+  tamanho: string;
+};
+
+export type FaixaPreco = {
+  id: number;
+  base: BaseFaixa;
+  min: string;
+  max: string | null;
+  preco_unitario: string;
+};
+
+export type ProdutoDetalhes = Produto & {
+  variacoes: Variacao[];
+  faixas: FaixaPreco[];
+};
+
+export type PrecoSelecionado = {
+  faixa_id: number;
+  preco_unitario: string;
+};
+
 export type ApiErrorBody = {
   error: {
     code: string;

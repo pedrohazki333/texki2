@@ -7,6 +7,7 @@ import type { Role, UsuarioAtual } from "@/lib/tipos";
 
 const ITENS_NAV: Array<{ label: string; href: string; papeis: Role[] }> = [
   { label: "Clientes", href: "/clientes", papeis: ["vendedora", "administrador"] },
+  { label: "Produtos", href: "/produtos", papeis: ["vendedora", "administrador"] },
 ];
 
 export default async function ProtectedLayout({

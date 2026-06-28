@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir \
       "email-validator>=2.2" \
       "bcrypt>=4.2" \
       "pyjwt>=2.10" \
+      "pillow>=11.0" \
+      "python-multipart>=0.0.20" \
       "pytest>=8.3" \
       "httpx>=0.27"
 

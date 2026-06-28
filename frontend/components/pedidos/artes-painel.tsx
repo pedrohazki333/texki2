@@ -28,6 +28,7 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
   const [analise, setAnalise] = useState<AnaliseResp | null>(null);
   const [largura, setLargura] = useState("");
   const [altura, setAltura] = useState("");
+  const [quantidade, setQuantidade] = useState("1");
   const [observacoes, setObservacoes] = useState("");
   const [cadeadoFechado, setCadeadoFechado] = useState(true);
   const [carregando, setCarregando] = useState(false);
@@ -38,6 +39,7 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
     setAnalise(null);
     setLargura("");
     setAltura("");
+    setQuantidade("1");
     setObservacoes("");
     setCadeadoFechado(true);
     setErro(null);
@@ -103,12 +105,18 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
       setErro("Largura e altura são obrigatórias.");
       return;
     }
+    const qtd = Number(quantidade);
+    if (!Number.isInteger(qtd) || qtd <= 0) {
+      setErro("A quantidade de peças com esta arte precisa ser um inteiro ≥ 1.");
+      return;
+    }
     setCarregando(true);
     try {
       const fd = new FormData();
       fd.append("arquivo", arquivo);
       fd.append("largura_cm", largura.trim());
       fd.append("altura_cm", altura.trim());
+      fd.append("quantidade", String(qtd));
       if (observacoes.trim()) fd.append("observacoes", observacoes.trim());
       const res = await fetch(`${API}/pedidos/${pedidoId}/artes`, {
         method: "POST",
@@ -170,6 +178,9 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
               <div className="flex-1 text-sm">
                 <div className="font-medium">
                   #{a.ordem} — {a.largura_cm} × {a.altura_cm} cm
+                </div>
+                <div className="text-xs text-neutral-600">
+                  {a.quantidade} {a.quantidade === 1 ? "peça" : "peças"}
                 </div>
                 {a.observacoes && (
                   <div className="text-xs text-neutral-600">{a.observacoes}</div>
@@ -261,6 +272,24 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
             />
           </label>
         </div>
+
+        <label className="block">
+          <span className="text-xs text-neutral-700">
+            Quantidade de peças com esta arte
+          </span>
+          <input
+            type="number"
+            step="1"
+            min="1"
+            value={quantidade}
+            onChange={(e) => setQuantidade(e.target.value)}
+            disabled={!arquivo}
+            className="mt-1 block w-28 rounded border border-neutral-300 px-2 py-1 text-sm disabled:bg-neutral-100"
+          />
+          <span className="mt-1 block text-[11px] text-neutral-500">
+            Se o pedido tem 3 peças e 2 levam esta estampa, use 2.
+          </span>
+        </label>
 
         <label className="block">
           <span className="text-xs text-neutral-700">Observações</span>

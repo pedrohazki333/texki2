@@ -83,6 +83,7 @@ export type Arte = {
   arquivo_mime: string;
   largura_cm: string;
   altura_cm: string;
+  quantidade: number;
   observacoes: string | null;
   ordem: number;
 };

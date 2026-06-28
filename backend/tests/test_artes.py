@@ -122,9 +122,50 @@ def test_criar_arte_png_valida_e_persiste(client, vendedora, login):
     body = r.json()
     assert body["ordem"] == 1
     assert body["observacoes"] == "frente"
+    # quantidade tem default 1 quando omitida
+    assert body["quantidade"] == 1
     # arquivo deve existir no diretório de uploads
     arquivos = list(Path(settings.uploads_dir).iterdir())
     assert len(arquivos) == 1
+
+
+def test_criar_arte_com_quantidade_explicita(client, vendedora, login):
+    cookie = login(vendedora)
+    pedido = _criar_pedido(client, cookie)
+    r = client.post(
+        f"/api/pedidos/{pedido['id']}/artes",
+        cookies={"texki_session": cookie},
+        files={"arquivo": ("a.png", _png_bytes(200, 100), "image/png")},
+        data={"largura_cm": "30", "altura_cm": "15", "quantidade": "2"},
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["quantidade"] == 2
+
+
+def test_criar_arte_quantidade_zero_eh_rejeitada(client, vendedora, login):
+    cookie = login(vendedora)
+    pedido = _criar_pedido(client, cookie)
+    r = client.post(
+        f"/api/pedidos/{pedido['id']}/artes",
+        cookies={"texki_session": cookie},
+        files={"arquivo": ("a.png", _png_bytes(200, 100), "image/png")},
+        data={"largura_cm": "30", "altura_cm": "15", "quantidade": "0"},
+    )
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "arte.quantidade_invalida"
+
+
+def test_criar_arte_quantidade_nao_inteira_eh_rejeitada(client, vendedora, login):
+    cookie = login(vendedora)
+    pedido = _criar_pedido(client, cookie)
+    r = client.post(
+        f"/api/pedidos/{pedido['id']}/artes",
+        cookies={"texki_session": cookie},
+        files={"arquivo": ("a.png", _png_bytes(200, 100), "image/png")},
+        data={"largura_cm": "30", "altura_cm": "15", "quantidade": "1.5"},
+    )
+    # Form(int) do FastAPI rejeita "1.5" como inválido (422 validation).
+    assert r.status_code == 422
 
 
 def test_criar_arte_png_com_proporcao_divergente_eh_rejeitada(

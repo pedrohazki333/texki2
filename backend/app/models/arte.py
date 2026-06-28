@@ -26,6 +26,7 @@ class Arte(Base):
     __table_args__ = (
         CheckConstraint("largura_cm > 0", name="ck_arte_largura_positiva"),
         CheckConstraint("altura_cm > 0", name="ck_arte_altura_positiva"),
+        CheckConstraint("quantidade > 0", name="ck_arte_quantidade_positiva"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -39,6 +40,9 @@ class Arte(Base):
     arquivo_mime: Mapped[str] = mapped_column(String(80), nullable=False)
     largura_cm: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     altura_cm: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    quantidade: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
     observacoes: Mapped[str | None] = mapped_column(Text, nullable=True)
     ordem: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

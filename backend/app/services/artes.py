@@ -43,6 +43,7 @@ def criar(
     upload: UploadFile,
     largura_cm: Decimal,
     altura_cm: Decimal,
+    quantidade: int,
     observacoes: str | None,
 ) -> Arte:
     mime = validar_mime(upload.content_type)
@@ -52,6 +53,14 @@ def criar(
             detail={
                 "code": "arte.medidas_invalidas",
                 "message": "Largura e altura devem ser positivas.",
+            },
+        )
+    if quantidade <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "arte.quantidade_invalida",
+                "message": "A quantidade de peças com esta arte precisa ser ≥ 1.",
             },
         )
     dados = _ler_para_buffer(upload)
@@ -75,6 +84,7 @@ def criar(
         arquivo_mime=mime,
         largura_cm=largura_cm,
         altura_cm=altura_cm,
+        quantidade=quantidade,
         observacoes=observacoes or None,
         ordem=_proxima_ordem(db, pedido.id),
     )

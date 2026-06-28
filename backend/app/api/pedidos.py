@@ -180,6 +180,7 @@ def criar_arte(
     arquivo: UploadFile = File(...),
     largura_cm: str = Form(...),
     altura_cm: str = Form(...),
+    quantidade: int = Form(default=1),
     observacoes: str | None = Form(default=None),
     db: Session = Depends(get_db),
 ) -> ArteOut:
@@ -190,6 +191,7 @@ def criar_arte(
         upload=arquivo,
         largura_cm=_parse_decimal("largura_cm", largura_cm),
         altura_cm=_parse_decimal("altura_cm", altura_cm),
+        quantidade=quantidade,
         observacoes=observacoes,
     )
     return ArteOut.model_validate(arte)

@@ -51,6 +51,7 @@ class ArteOut(BaseModel):
     arquivo_mime: str
     largura_cm: Decimal
     altura_cm: Decimal
+    quantidade: int
     observacoes: str | None
     ordem: int
 

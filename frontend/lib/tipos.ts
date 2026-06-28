@@ -50,6 +50,55 @@ export type PrecoSelecionado = {
   preco_unitario: string;
 };
 
+export type PedidoStatus =
+  | "recebido"
+  | "pago"
+  | "na_fila_de_impressao"
+  | "impressao_pronta"
+  | "pedido_pronto"
+  | "entregue"
+  | "cancelado";
+
+export type Pedido = {
+  id: number;
+  cliente_id: number;
+  vendedora_id: number;
+  status: PedidoStatus;
+  data_entrega: string;
+  total: string;
+  created_at: string;
+};
+
+export type ItemPedido = {
+  id: number;
+  produto_id: number;
+  variacao_id: number | null;
+  quantidade: string;
+  preco_unitario: string;
+  subtotal: string;
+};
+
+export type Arte = {
+  id: number;
+  arquivo_mime: string;
+  largura_cm: string;
+  altura_cm: string;
+  observacoes: string | null;
+  ordem: number;
+};
+
+export type PedidoDetalhes = Pedido & {
+  itens: ItemPedido[];
+  artes: Arte[];
+  cliente: Cliente;
+};
+
+export type ResponsavelPossivel = {
+  id: number;
+  nome: string;
+  role: Role;
+};
+
 export type ApiErrorBody = {
   error: {
     code: string;

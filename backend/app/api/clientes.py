@@ -50,3 +50,11 @@ def excluir(cliente_id: int, db: Session = Depends(get_db)) -> Response:
         raise _nao_encontrado()
     svc.excluir(db, cliente)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{cliente_id}/anonimizar", response_model=ClienteOut)
+def anonimizar(cliente_id: int, db: Session = Depends(get_db)) -> ClienteOut:
+    cliente = svc.obter(db, cliente_id)
+    if cliente is None:
+        raise _nao_encontrado()
+    return ClienteOut.model_validate(svc.anonimizar(db, cliente))

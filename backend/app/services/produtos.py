@@ -1,8 +1,19 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.item_pedido import ItemPedido
 from app.models.produto import Produto
 from app.schemas.produto import ProdutoIn, ProdutoUpdate
+
+
+def _tem_itens(db: Session, produto_id: int) -> bool:
+    return (
+        db.scalar(
+            select(ItemPedido.id).where(ItemPedido.produto_id == produto_id).limit(1)
+        )
+        is not None
+    )
 
 
 def listar(db: Session) -> list[Produto]:
@@ -29,5 +40,15 @@ def atualizar_nome(db: Session, produto: Produto, payload: ProdutoUpdate) -> Pro
 
 
 def excluir(db: Session, produto: Produto) -> None:
+    if _tem_itens(db, produto.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "produto.tem_itens",
+                "message": (
+                    "Produto possui itens em pedidos e não pode ser excluído."
+                ),
+            },
+        )
     db.delete(produto)
     db.commit()

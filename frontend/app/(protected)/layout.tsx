@@ -6,6 +6,7 @@ import { apiServerFetch } from "@/lib/api-server";
 import type { Role, UsuarioAtual } from "@/lib/tipos";
 
 const ITENS_NAV: Array<{ label: string; href: string; papeis: Role[] }> = [
+  { label: "Pedidos", href: "/pedidos", papeis: ["vendedora", "administrador"] },
   { label: "Clientes", href: "/clientes", papeis: ["vendedora", "administrador"] },
   { label: "Produtos", href: "/produtos", papeis: ["vendedora", "administrador"] },
 ];

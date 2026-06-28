@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     seed_admin_email: str
     seed_admin_password: str
     seed_admin_nome: str = "Administrador"
+    uploads_dir: str = "/srv/texki2/uploads"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 

@@ -69,10 +69,19 @@
 - **[Decisão pendente — herdada da Fatia 1]** Agora que pedidos referenciam clientes (e produtos), é preciso definir a exclusão de um cliente/produto com pedidos vinculados. **Proposta:** bloquear a exclusão direta; e, para o "esquecimento" LGPD de um cliente com pedidos, **anonimizar** os dados pessoais do cliente mantendo os registros de pedido. Confirmar antes de implementar a exclusão.
 
 ## Definição de pronto
-- [ ] Crio um pedido (cliente + responsável + ≥1 item + data de entrega) que nasce em `recebido`.
-- [ ] O `preco_unitario` de cada item vem da faixa correta e fica congelado; `subtotal` e `total` saem certos e derivados.
-- [ ] Editar a quantidade recalcula o preço; mudar as faixas depois não altera pedidos antigos.
-- [ ] Anexo artes (PNG/PDF/TIFF ≤ 25 MB) salvas pela camada de storage; tipo/tamanho inválidos são barrados.
-- [ ] A proporção funciona no PNG (recorte da transparência, cadeado, tolerância zero) e fica inativa em PDF/TIFF.
-- [ ] Impressor recebe 403, não autenticado recebe 401; só Admin troca o responsável (auditado).
-- [ ] Testes passando cobrindo, no mínimo: cálculo de total, congelamento de preço, validação de item e a regra de proporção do PNG.
+- [x] Crio um pedido (cliente + responsável + ≥1 item + data de entrega) que nasce em `recebido`.
+- [x] O `preco_unitario` de cada item vem da faixa correta e fica congelado; `subtotal` e `total` saem certos e derivados.
+- [x] Editar a quantidade recalcula o preço; mudar as faixas depois não altera pedidos antigos.
+- [x] Anexo artes (PNG/PDF/TIFF ≤ 25 MB) salvas pela camada de storage; tipo/tamanho inválidos são barrados.
+- [x] A proporção funciona no PNG (recorte da transparência, cadeado, tolerância zero) e fica inativa em PDF/TIFF.
+- [x] Impressor recebe 403, não autenticado recebe 401; só Admin troca o responsável (auditado).
+- [x] Testes passando cobrindo, no mínimo: cálculo de total, congelamento de preço, validação de item e a regra de proporção do PNG.
+
+## Decisões herdadas resolvidas
+- **Pedido exige ≥ 1 item** (premissa confirmada).
+- **DTF por metro entra em pedido**: a `quantidade` do item representa metros, e a faixa é escolhida por comprimento.
+- **Exclusão com vínculos:** cliente com pedidos é bloqueado (409 `cliente.tem_pedidos`); para esquecimento LGPD oferece-se `POST /clientes/:id/anonimizar`. Produto com itens é bloqueado (409 `produto.tem_itens`) sem alternativa de anonimização.
+
+## Notas de implementação
+- Âncora do cadeado (RF5): adotada como "campo em edição" — quando a vendedora edita a largura, a altura é recalculada; e vice-versa. O backend aceita medidas que casem com a proporção por qualquer das duas como âncora, absorvendo o arredondamento de mm.
+- Arredondamento das medidas corrigidas: **1 casa decimal** (mm), meio-acima.

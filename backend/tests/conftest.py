@@ -19,6 +19,13 @@ from app.main import app
 from app.models.usuario import Usuario
 
 
+@pytest.fixture(autouse=True)
+def uploads_em_tmp(tmp_path, monkeypatch):
+    """Aponta o storage para um tmp por teste — não escreve em /srv/texki2."""
+    monkeypatch.setattr(settings, "uploads_dir", str(tmp_path))
+    yield
+
+
 @pytest.fixture
 def db_session():
     engine = create_engine(settings.database_url)

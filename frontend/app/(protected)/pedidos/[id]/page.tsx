@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ArtesPainel } from "@/components/pedidos/artes-painel";
 import { ExcluirPedido } from "@/components/pedidos/excluir-pedido";
 import { PedidoForm } from "@/components/pedidos/pedido-form";
 import { TrocarResponsavel } from "@/components/pedidos/trocar-responsavel";
@@ -95,6 +96,8 @@ export default async function PedidoDetalhesPage({
         produtos={produtosDetalhados}
         inicial={pedido}
       />
+
+      <ArtesPainel pedidoId={pedido.id} artes={pedido.artes} />
 
       {me.role === "administrador" && (
         <TrocarResponsavel

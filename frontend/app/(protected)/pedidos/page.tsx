@@ -1,107 +1,91 @@
 import Link from "next/link";
 
+import { CardPedido } from "@/components/pedidos/card-pedido";
 import { apiServerFetch } from "@/lib/api-server";
-import type { Cliente, Pedido } from "@/lib/tipos";
+import type { DashboardPedidos, PedidoStatus } from "@/lib/tipos";
 
 export const dynamic = "force-dynamic";
 
-const LABEL_STATUS: Record<string, string> = {
-  recebido: "Recebido",
-  pago: "Pago",
-  na_fila_de_impressao: "Na fila de impressão",
-  impressao_pronta: "Impressão pronta",
-  pedido_pronto: "Pedido pronto",
-  entregue: "Entregue",
-  cancelado: "Cancelado",
-};
+const COLUNAS: { status: Exclude<PedidoStatus, "cancelado">; titulo: string }[] = [
+  { status: "recebido", titulo: "Recebido" },
+  { status: "pago", titulo: "Pago" },
+  { status: "na_fila_de_impressao", titulo: "Na fila de impressão" },
+  { status: "impressao_pronta", titulo: "Impressão pronta" },
+  { status: "pedido_pronto", titulo: "Pedido pronto" },
+  { status: "entregue", titulo: "Entregue" },
+];
 
-function formatarData(iso: string): string {
-  const [ano, mes, dia] = iso.split("-");
-  return `${dia}/${mes}/${ano}`;
-}
-
-export default async function PedidosPage() {
-  const [resPedidos, resClientes] = await Promise.all([
-    apiServerFetch("/pedidos"),
-    apiServerFetch("/clientes"),
-  ]);
-  if (!resPedidos.ok || !resClientes.ok) {
+export default async function PedidosDashboardPage() {
+  const res = await apiServerFetch("/pedidos/dashboard");
+  if (!res.ok) {
     return (
       <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-        Erro ao carregar pedidos.
+        Erro ao carregar o dashboard de pedidos.
       </div>
     );
   }
-  const pedidos = (await resPedidos.json()) as Pedido[];
-  const clientes = (await resClientes.json()) as Cliente[];
-  const nomePorCliente = new Map(
-    clientes.map((c) => [
-      c.id,
-      c.ultimo_nome ? `${c.primeiro_nome} ${c.ultimo_nome}` : c.primeiro_nome,
-    ]),
-  );
+  const dashboard = (await res.json()) as DashboardPedidos;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Pedidos</h1>
-        <Link
-          href="/pedidos/novo"
-          className="rounded bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800"
-        >
-          Novo pedido
-        </Link>
-      </div>
-
-      {pedidos.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-300 bg-white p-10 text-center">
-          <p className="text-neutral-700">Nenhum pedido registrado ainda.</p>
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard de pedidos</h1>
+          <p className="text-sm text-neutral-600">
+            Pedidos agrupados por status. Cancelados ficam fora — veja em{" "}
+            <Link href="/pedidos/lista" className="underline">
+              lista completa
+            </Link>
+            .
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href="/pedidos/lista"
+            className="rounded border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-100"
+          >
+            Lista completa
+          </Link>
           <Link
             href="/pedidos/novo"
-            className="mt-3 inline-block text-sm font-medium text-neutral-900 underline"
+            className="rounded bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800"
           >
-            Registrar o primeiro
+            Novo pedido
           </Link>
         </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-neutral-600">
-              <tr>
-                <th className="px-4 py-2 font-medium">#</th>
-                <th className="px-4 py-2 font-medium">Cliente</th>
-                <th className="px-4 py-2 font-medium">Entrega</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium text-right">Total</th>
-                <th className="px-4 py-2 font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pedidos.map((p) => (
-                <tr key={p.id} className="border-t border-neutral-100">
-                  <td className="px-4 py-2 font-mono">{p.id}</td>
-                  <td className="px-4 py-2">
-                    {nomePorCliente.get(p.cliente_id) ?? `Cliente #${p.cliente_id}`}
-                  </td>
-                  <td className="px-4 py-2">{formatarData(p.data_entrega)}</td>
-                  <td className="px-4 py-2 text-neutral-700">
-                    {LABEL_STATUS[p.status] ?? p.status}
-                  </td>
-                  <td className="px-4 py-2 text-right">R$ {p.total}</td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
-                      href={`/pedidos/${p.id}`}
-                      className="rounded border border-neutral-300 px-3 py-1 text-xs hover:bg-neutral-100"
-                    >
-                      Abrir
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {COLUNAS.map((col) => {
+          const pedidos = dashboard[col.status] ?? [];
+          return (
+            <section
+              key={col.status}
+              className="flex flex-col gap-2 rounded-lg bg-neutral-100 p-3"
+            >
+              <header className="flex items-baseline justify-between">
+                <h2 className="text-sm font-semibold text-neutral-800">
+                  {col.titulo}
+                </h2>
+                <span className="rounded bg-white px-2 py-0.5 text-xs text-neutral-600">
+                  {pedidos.length}
+                </span>
+              </header>
+              {pedidos.length === 0 ? (
+                <p className="rounded border border-dashed border-neutral-300 px-2 py-6 text-center text-xs text-neutral-500">
+                  Nenhum pedido aqui.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {pedidos.map((p) => (
+                    <CardPedido key={p.id} pedido={p} />
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

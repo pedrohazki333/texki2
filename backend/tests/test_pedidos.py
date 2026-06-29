@@ -538,14 +538,13 @@ def test_admin_trocar_responsavel_para_impressor_rejeita(
 @pytest.mark.parametrize(
     "metodo,path",
     [
-        ("GET", "/api/pedidos"),
+        # CRUD bloqueado pro impressor (Fatia 3).
         ("POST", "/api/pedidos"),
-        ("GET", "/api/pedidos/1"),
         ("PUT", "/api/pedidos/1"),
         ("DELETE", "/api/pedidos/1"),
     ],
 )
-def test_pedidos_bloqueia_impressor(client, impressor, login, metodo, path):
+def test_pedidos_bloqueia_impressor_no_crud(client, impressor, login, metodo, path):
     cookie = login(impressor)
     body = {} if metodo in ("POST", "PUT") else None
     r = client.request(metodo, path, cookies={"texki_session": cookie}, json=body)

@@ -83,6 +83,35 @@ def listar(db: Session) -> list[Pedido]:
     )
 
 
+# Status que aparecem no dashboard (cancelado fica fora — só na lista completa).
+STATUS_DASHBOARD: tuple[str, ...] = (
+    "recebido",
+    "pago",
+    "na_fila_de_impressao",
+    "impressao_pronta",
+    "pedido_pronto",
+    "entregue",
+)
+
+
+def listar_por_status(db: Session) -> dict[str, list[Pedido]]:
+    """Agrupa pedidos visíveis no dashboard por status; ordena por data dentro
+    do grupo. Carrega cliente e artes (ordem) para o card."""
+    pedidos = db.scalars(
+        select(Pedido)
+        .options(
+            selectinload(Pedido.cliente),
+            selectinload(Pedido.artes),
+        )
+        .where(Pedido.status.in_(STATUS_DASHBOARD))
+        .order_by(Pedido.status, Pedido.created_at.desc())
+    )
+    agrupado: dict[str, list[Pedido]] = {s: [] for s in STATUS_DASHBOARD}
+    for p in pedidos:
+        agrupado[p.status].append(p)
+    return agrupado
+
+
 def obter(db: Session, pedido_id: int) -> Pedido | None:
     return db.scalar(
         select(Pedido)
@@ -129,6 +158,45 @@ def atualizar(db: Session, pedido: Pedido, payload: PedidoUpdate) -> Pedido:
 def excluir(db: Session, pedido: Pedido) -> None:
     db.delete(pedido)
     db.commit()
+
+
+VALORES_STATUS: tuple[str, ...] = (
+    "recebido",
+    "pago",
+    "na_fila_de_impressao",
+    "impressao_pronta",
+    "pedido_pronto",
+    "entregue",
+    "cancelado",
+)
+
+
+def trocar_status(
+    db: Session, pedido: Pedido, novo_status: str, ator: Usuario
+) -> Pedido:
+    """Troca manual de status. Idempotente: se igual ao atual, não audita
+    nem commita."""
+    if novo_status not in VALORES_STATUS:
+        raise _erro(
+            "pedido.status_invalido",
+            f"Status '{novo_status}' não existe.",
+        )
+    if novo_status == pedido.status:
+        return pedido
+    anterior = pedido.status
+    pedido.status = novo_status
+    auditoria_svc.registrar(
+        db,
+        usuario_id=ator.id,
+        entidade="pedido",
+        entidade_id=pedido.id,
+        campo="status",
+        valor_anterior=anterior,
+        valor_novo=novo_status,
+    )
+    db.commit()
+    db.refresh(pedido)
+    return pedido
 
 
 def trocar_responsavel(

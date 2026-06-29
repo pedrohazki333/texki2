@@ -17,17 +17,22 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, get_db, require_role
 from app.models.pedido import Pedido
 from app.models.usuario import Usuario
+from app.models.arte import Arte
+from app.models.auditoria import Auditoria
 from app.schemas.pedido import (
     ArteOut,
+    AuditoriaItemOut,
+    PedidoCardOut,
     PedidoDetalhesOut,
     PedidoIn,
     PedidoOut,
     PedidoUpdate,
     TrocarResponsavelIn,
+    TrocarStatusIn,
 )
 from app.services import artes as artes_svc
 from app.services import pedidos as svc
-from app.storage import caminho_absoluto
+from app.storage import caminho_absoluto, gerar_miniatura
 
 router = APIRouter()
 
@@ -47,6 +52,36 @@ def _obter_ou_404(db: Session, pedido_id: int) -> Pedido:
 
 
 # ---- rotas literais antes das paramétricas (evita conflito de matching) ----
+
+
+def _card(p: Pedido) -> PedidoCardOut:
+    cliente_nome = (
+        f"{p.cliente.primeiro_nome} {p.cliente.ultimo_nome}".strip()
+        if p.cliente.ultimo_nome
+        else p.cliente.primeiro_nome
+    )
+    primeira = p.artes[0] if p.artes else None
+    return PedidoCardOut(
+        id=p.id,
+        cliente_nome=cliente_nome,
+        status=p.status,
+        data_entrega=p.data_entrega,
+        total=p.total,
+        created_at=p.created_at,
+        primeira_arte_id=primeira.id if primeira else None,
+        primeira_arte_mime=primeira.arquivo_mime if primeira else None,
+    )
+
+
+@router.get(
+    "/dashboard",
+    response_model=dict[str, list[PedidoCardOut]],
+    dependencies=[Depends(require_role("vendedora", "impressor", "administrador"))],
+)
+def dashboard(db: Session = Depends(get_db)) -> dict[str, list[PedidoCardOut]]:
+    agrupado = svc.listar_por_status(db)
+    return {status: [_card(p) for p in pedidos] for status, pedidos in agrupado.items()}
+
 
 @router.get(
     "/_utils/vendedoras",
@@ -70,7 +105,7 @@ def listar_responsaveis_possiveis(db: Session = Depends(get_db)) -> list[dict]:
 @router.get(
     "",
     response_model=list[PedidoOut],
-    dependencies=[Depends(require_role("vendedora", "administrador"))],
+    dependencies=[Depends(require_role("vendedora", "impressor", "administrador"))],
 )
 def listar(db: Session = Depends(get_db)) -> list[PedidoOut]:
     return [PedidoOut.model_validate(p) for p in svc.listar(db)]
@@ -93,7 +128,7 @@ def criar(
 @router.get(
     "/{pedido_id}",
     response_model=PedidoDetalhesOut,
-    dependencies=[Depends(require_role("vendedora", "administrador"))],
+    dependencies=[Depends(require_role("vendedora", "impressor", "administrador"))],
 )
 def obter(pedido_id: int, db: Session = Depends(get_db)) -> PedidoDetalhesOut:
     return PedidoDetalhesOut.model_validate(_obter_ou_404(db, pedido_id))
@@ -122,6 +157,40 @@ def excluir(pedido_id: int, db: Session = Depends(get_db)) -> Response:
     pedido = _obter_ou_404(db, pedido_id)
     svc.excluir(db, pedido)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/{pedido_id}/auditoria",
+    response_model=list[AuditoriaItemOut],
+    dependencies=[Depends(require_role("vendedora", "impressor", "administrador"))],
+)
+def auditoria_do_pedido(
+    pedido_id: int, db: Session = Depends(get_db)
+) -> list[AuditoriaItemOut]:
+    _obter_ou_404(db, pedido_id)
+    linhas = db.scalars(
+        select(Auditoria)
+        .where(Auditoria.entidade == "pedido", Auditoria.entidade_id == pedido_id)
+        .order_by(Auditoria.created_at.desc(), Auditoria.id.desc())
+    )
+    return [AuditoriaItemOut.model_validate(l) for l in linhas]
+
+
+@router.patch(
+    "/{pedido_id}/status",
+    response_model=PedidoDetalhesOut,
+)
+def trocar_status(
+    pedido_id: int,
+    payload: TrocarStatusIn,
+    db: Session = Depends(get_db),
+    # Diferente do CRUD: impressor também troca status (Fatia 4 / RF6).
+    user: Usuario = Depends(require_role("vendedora", "impressor", "administrador")),
+) -> PedidoDetalhesOut:
+    pedido = _obter_ou_404(db, pedido_id)
+    return PedidoDetalhesOut.model_validate(
+        svc.trocar_status(db, pedido, payload.status, user)
+    )
 
 
 @router.put(
@@ -214,6 +283,38 @@ def baixar_arquivo_arte(
         path=caminho_absoluto(arte.arquivo_path),
         media_type=arte.arquivo_mime,
         filename=arte.arquivo_path,
+    )
+
+
+@router.get(
+    "/{pedido_id}/artes/{arte_id}/thumb",
+    dependencies=[Depends(require_role("vendedora", "impressor", "administrador"))],
+)
+def baixar_thumb_arte(
+    pedido_id: int, arte_id: int, db: Session = Depends(get_db)
+) -> FileResponse:
+    """Miniatura otimizada (RNF4). Gera sob demanda e cacheia no disco.
+    Só PNG tem miniatura — para PDF/TIFF, devolve 404 (o frontend mostra
+    placeholder)."""
+    arte = artes_svc.obter(db, pedido_id, arte_id)
+    if arte is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "arte.not_found", "message": "Arte não encontrada."},
+        )
+    thumb = gerar_miniatura(arte.arquivo_path, mime=arte.arquivo_mime)
+    if thumb is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "arte.sem_miniatura",
+                "message": "Este formato não gera miniatura.",
+            },
+        )
+    return FileResponse(
+        path=thumb,
+        media_type="image/png",
+        headers={"Cache-Control": "private, max-age=3600"},
     )
 
 

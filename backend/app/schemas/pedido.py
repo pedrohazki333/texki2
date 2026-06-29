@@ -76,3 +76,33 @@ class PedidoDetalhesOut(PedidoOut):
 
 class TrocarResponsavelIn(BaseModel):
     vendedora_id: int
+
+
+class TrocarStatusIn(BaseModel):
+    status: PedidoStatus
+
+
+class PedidoCardOut(BaseModel):
+    """Pedido do dashboard — campos enxutos para os cards por status."""
+
+    id: int
+    cliente_nome: str
+    status: PedidoStatus
+    data_entrega: date
+    total: Decimal
+    created_at: datetime
+    primeira_arte_id: int | None
+    primeira_arte_mime: str | None
+
+
+class AuditoriaItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    usuario_id: int
+    entidade: str
+    entidade_id: int
+    campo: str
+    valor_anterior: str | None
+    valor_novo: str | None
+    created_at: datetime

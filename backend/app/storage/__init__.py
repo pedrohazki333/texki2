@@ -14,6 +14,11 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 
+try:
+    from PIL import Image
+except ImportError:  # pragma: no cover
+    Image = None  # type: ignore[assignment]
+
 # Tipos aceitos (RNF1).
 EXT_POR_MIME: dict[str, str] = {
     "image/png": ".png",
@@ -77,3 +82,54 @@ def remover(relativo: str) -> None:
     p = caminho_absoluto(relativo)
     if p.exists():
         p.unlink()
+    thumb = _caminho_thumb(relativo)
+    if thumb.exists():
+        thumb.unlink()
+
+
+# ---- miniaturas (RNF4) ----
+
+THUMB_MAX_LADO_PADRAO = 256
+THUMB_SUFIXO = "_thumb.png"
+THUMB_MIMES_SUPORTADOS = {"image/png"}
+
+
+def _caminho_thumb(relativo: str) -> Path:
+    base = _base_dir()
+    nome = Path(relativo).stem + THUMB_SUFIXO
+    return base / nome
+
+
+def caminho_miniatura(relativo: str) -> Path:
+    """Caminho absoluto da miniatura no disco (mesmo padrão de proteção)."""
+    p = _caminho_thumb(relativo).resolve()
+    base = _base_dir().resolve()
+    if base not in p.parents and p != base:
+        raise _erro_arquivo_invalido("Caminho inválido.")
+    return p
+
+
+def gerar_miniatura(
+    relativo: str,
+    *,
+    mime: str,
+    max_lado: int = THUMB_MAX_LADO_PADRAO,
+) -> Path | None:
+    """Gera (ou reusa) miniatura PNG ≤ max_lado px. Retorna o caminho absoluto
+    do thumb, ou None se o mime não tem renderização trivial (PDF/TIFF).
+
+    Idempotente: se o thumb já existe no disco, devolve direto sem regerar.
+    """
+    if mime not in THUMB_MIMES_SUPORTADOS:
+        return None
+    if Image is None:  # pragma: no cover
+        raise RuntimeError("Pillow não está instalado.")
+    destino = caminho_miniatura(relativo)
+    if destino.exists():
+        return destino
+    origem = caminho_absoluto(relativo)
+    with Image.open(origem) as img:
+        img = img.convert("RGBA")
+        img.thumbnail((max_lado, max_lado))
+        img.save(destino, format="PNG", optimize=True)
+    return destino

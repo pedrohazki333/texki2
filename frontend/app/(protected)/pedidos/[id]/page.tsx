@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { ArtesPainel } from "@/components/pedidos/artes-painel";
 import { ExcluirPedido } from "@/components/pedidos/excluir-pedido";
+import { HistoricoAuditoria } from "@/components/pedidos/historico-auditoria";
 import { PedidoForm } from "@/components/pedidos/pedido-form";
+import { SeletorStatus } from "@/components/pedidos/seletor-status";
 import { TrocarResponsavel } from "@/components/pedidos/trocar-responsavel";
 import { apiServerFetch } from "@/lib/api-server";
 import type {
@@ -74,12 +76,15 @@ export default async function PedidoDetalhesPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Pedido #{pedido.id}</h1>
-          <p className="text-sm text-neutral-600">
-            Status:{" "}
-            <span className="font-medium">
-              {LABEL_STATUS[pedido.status] ?? pedido.status}
+          <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+            <span>Status:</span>
+            <div className="w-56">
+              <SeletorStatus pedidoId={pedido.id} statusAtual={pedido.status} />
+            </div>
+            <span className="text-xs text-neutral-400">
+              ({LABEL_STATUS[pedido.status] ?? pedido.status})
             </span>
-          </p>
+          </div>
           <p className="text-sm text-neutral-600">
             Responsável:{" "}
             <span className="font-medium">
@@ -106,6 +111,11 @@ export default async function PedidoDetalhesPage({
           vendedoras={vendedoras}
         />
       )}
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">Histórico</h2>
+        <HistoricoAuditoria pedidoId={pedido.id} />
+      </section>
     </div>
   );
 }

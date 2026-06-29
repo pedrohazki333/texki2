@@ -100,6 +100,33 @@ export type ResponsavelPossivel = {
   role: Role;
 };
 
+export type PedidoCard = {
+  id: number;
+  cliente_nome: string;
+  status: PedidoStatus;
+  data_entrega: string;
+  total: string;
+  created_at: string;
+  primeira_arte_id: number | null;
+  primeira_arte_mime: string | null;
+};
+
+export type DashboardPedidos = Record<
+  Exclude<PedidoStatus, "cancelado">,
+  PedidoCard[]
+>;
+
+export type AuditoriaItem = {
+  id: number;
+  usuario_id: number;
+  entidade: string;
+  entidade_id: number;
+  campo: string;
+  valor_anterior: string | null;
+  valor_novo: string | null;
+  created_at: string;
+};
+
 export type ApiErrorBody = {
   error: {
     code: string;

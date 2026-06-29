@@ -56,13 +56,13 @@ export default async function PedidosDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {COLUNAS.map((col) => {
           const pedidos = dashboard[col.status] ?? [];
           return (
             <section
               key={col.status}
-              className="flex flex-col gap-2 rounded-lg bg-neutral-100 p-3"
+              className="flex min-h-[60vh] flex-col gap-2 rounded-lg bg-neutral-100 p-3"
             >
               <header className="flex items-baseline justify-between">
                 <h2 className="text-sm font-semibold text-neutral-800">
@@ -73,11 +73,13 @@ export default async function PedidosDashboardPage() {
                 </span>
               </header>
               {pedidos.length === 0 ? (
-                <p className="rounded border border-dashed border-neutral-300 px-2 py-6 text-center text-xs text-neutral-500">
-                  Nenhum pedido aqui.
-                </p>
+                <div className="flex flex-1 items-center justify-center rounded border border-dashed border-neutral-300 px-2 py-4">
+                  <p className="text-center text-xs text-neutral-500">
+                    Nenhum pedido aqui.
+                  </p>
+                </div>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-1 flex-col gap-2">
                   {pedidos.map((p) => (
                     <CardPedido key={p.id} pedido={p} />
                   ))}

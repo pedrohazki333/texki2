@@ -177,9 +177,7 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
               )}
               <div className="flex-1 text-sm">
                 <div className="font-medium">
-                  #{a.ordem} — {a.largura_cm} × {a.altura_cm} cm
-                </div>
-                <div className="text-xs text-neutral-600">
+                  #{a.ordem} — {a.largura_cm} × {a.altura_cm} cm ·{" "}
                   {a.quantidade} {a.quantidade === 1 ? "peça" : "peças"}
                 </div>
                 {a.observacoes && (
@@ -271,25 +269,24 @@ export function ArtesPainel({ pedidoId, artes }: Props) {
               className="mt-1 block w-28 rounded border border-neutral-300 px-2 py-1 text-sm disabled:bg-neutral-100"
             />
           </label>
+          <label className="block">
+            <span
+              className="text-xs text-neutral-700"
+              title="Quantas peças do pedido recebem esta arte. Ex.: pedido de 3 peças com 2 levando esta estampa → 2."
+            >
+              Quantidade
+            </span>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              value={quantidade}
+              onChange={(e) => setQuantidade(e.target.value)}
+              disabled={!arquivo}
+              className="mt-1 block w-24 rounded border border-neutral-300 px-2 py-1 text-sm disabled:bg-neutral-100"
+            />
+          </label>
         </div>
-
-        <label className="block">
-          <span className="text-xs text-neutral-700">
-            Quantidade de peças com esta arte
-          </span>
-          <input
-            type="number"
-            step="1"
-            min="1"
-            value={quantidade}
-            onChange={(e) => setQuantidade(e.target.value)}
-            disabled={!arquivo}
-            className="mt-1 block w-28 rounded border border-neutral-300 px-2 py-1 text-sm disabled:bg-neutral-100"
-          />
-          <span className="mt-1 block text-[11px] text-neutral-500">
-            Se o pedido tem 3 peças e 2 levam esta estampa, use 2.
-          </span>
-        </label>
 
         <label className="block">
           <span className="text-xs text-neutral-700">Observações</span>

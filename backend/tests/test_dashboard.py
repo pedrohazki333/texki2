@@ -37,23 +37,21 @@ def test_dashboard_agrupa_por_status(client, db_session, vendedora, login):
     _pedido(db_session, vendedora, "recebido")
     _pedido(db_session, vendedora, "recebido")
     _pedido(db_session, vendedora, "pago")
-    _pedido(db_session, vendedora, "entregue")
     db_session.commit()
 
     r = client.get("/api/pedidos/dashboard", cookies={"texki_session": cookie})
     assert r.status_code == 200, r.text
     body = r.json()
+    # Cancelado e entregue não têm coluna no dashboard.
     assert set(body.keys()) == {
         "recebido",
         "pago",
         "na_fila_de_impressao",
         "impressao_pronta",
         "pedido_pronto",
-        "entregue",
     }
     assert len(body["recebido"]) >= 2
     assert len(body["pago"]) >= 1
-    assert len(body["entregue"]) >= 1
 
 
 def test_dashboard_oculta_cancelado(client, db_session, vendedora, login):
@@ -72,15 +70,35 @@ def test_dashboard_oculta_cancelado(client, db_session, vendedora, login):
     assert "cancelado" not in body
 
 
-def test_lista_completa_inclui_cancelado(client, db_session, vendedora, login):
+def test_dashboard_oculta_entregue(client, db_session, vendedora, login):
+    """Pedido entregue sai do dashboard (igual cancelado) e continua na lista."""
+    cookie = login(vendedora)
+    p_entregue = _pedido(db_session, vendedora, "entregue")
+    p_visivel = _pedido(db_session, vendedora, "recebido")
+    db_session.commit()
+
+    r = client.get("/api/pedidos/dashboard", cookies={"texki_session": cookie})
+    assert r.status_code == 200
+    body = r.json()
+    todos_ids = {p["id"] for grupo in body.values() for p in grupo}
+    assert p_visivel.id in todos_ids
+    assert p_entregue.id not in todos_ids
+    assert "entregue" not in body
+
+
+def test_lista_completa_inclui_cancelado_e_entregue(
+    client, db_session, vendedora, login
+):
     cookie = login(vendedora)
     p_cancelado = _pedido(db_session, vendedora, "cancelado")
+    p_entregue = _pedido(db_session, vendedora, "entregue")
     db_session.commit()
 
     r = client.get("/api/pedidos", cookies={"texki_session": cookie})
     assert r.status_code == 200
     ids = {p["id"] for p in r.json()}
     assert p_cancelado.id in ids
+    assert p_entregue.id in ids
 
 
 def test_dashboard_card_traz_cliente_nome_e_primeira_arte(

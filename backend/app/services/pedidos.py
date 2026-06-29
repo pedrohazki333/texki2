@@ -83,14 +83,15 @@ def listar(db: Session) -> list[Pedido]:
     )
 
 
-# Status que aparecem no dashboard (cancelado fica fora — só na lista completa).
+# Status que aparecem no dashboard. Cancelado e entregue ficam fora —
+# o pedido fica concluído (ou abortado) e não polui a visão ativa.
+# Ambos seguem visíveis na lista completa.
 STATUS_DASHBOARD: tuple[str, ...] = (
     "recebido",
     "pago",
     "na_fila_de_impressao",
     "impressao_pronta",
     "pedido_pronto",
-    "entregue",
 )
 
 

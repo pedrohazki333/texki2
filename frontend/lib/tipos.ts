@@ -112,7 +112,7 @@ export type PedidoCard = {
 };
 
 export type DashboardPedidos = Record<
-  Exclude<PedidoStatus, "cancelado">,
+  Exclude<PedidoStatus, "cancelado" | "entregue">,
   PedidoCard[]
 >;
 

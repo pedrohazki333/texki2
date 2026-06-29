@@ -6,13 +6,14 @@ import type { DashboardPedidos, PedidoStatus } from "@/lib/tipos";
 
 export const dynamic = "force-dynamic";
 
-const COLUNAS: { status: Exclude<PedidoStatus, "cancelado">; titulo: string }[] = [
+type StatusDashboard = Exclude<PedidoStatus, "cancelado" | "entregue">;
+
+const COLUNAS: { status: StatusDashboard; titulo: string }[] = [
   { status: "recebido", titulo: "Recebido" },
   { status: "pago", titulo: "Pago" },
   { status: "na_fila_de_impressao", titulo: "Na fila de impressão" },
   { status: "impressao_pronta", titulo: "Impressão pronta" },
   { status: "pedido_pronto", titulo: "Pedido pronto" },
-  { status: "entregue", titulo: "Entregue" },
 ];
 
 export default async function PedidosDashboardPage() {
